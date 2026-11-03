@@ -78,8 +78,12 @@ static int film_name_from_body(const char *body, int n, char *dst, int dstn)
             k = start + 4;
             while (k < i && (body[k] == ' ' || body[k] == '\t')) k++;
             o = 0;
-            while (k < i && o < dstn - 1 && body[k] != ' ' && body[k] != '\t')
+            /* The whole rest of the line: stocks are named "BLEACH BYPASS",
+             * and develop matches the name in SE.CFG against the full one. */
+            while (k < i && o < dstn - 1)
                 dst[o++] = body[k++];
+            while (o > 0 && (dst[o - 1] == ' ' || dst[o - 1] == '\t'))
+                o--;
             dst[o] = 0;
             if (o > 0) return 1;
         }
