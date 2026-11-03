@@ -404,6 +404,25 @@ On the **50D** and **1100D**, `AUTOEXEC.BIN` is a rebuilt Magic Lantern
 with the Film page from [`integrations/magiclantern/`](integrations/magiclantern/)
 (`common/` plus one directory per body), built by `tools/build-ml.py`.
 
+## 🙏 Credits
+
+**Soup Engine is [jiijii0](https://github.com/jiijii0)'s work.** The look
+engine, the film stocks, the on-camera interface and the 5D Classic and 50D
+support all come from the original project,
+[jiijii0/soup-engine](https://github.com/jiijii0/soup-engine). This fork
+only adds the EOS 1100D port and builds on all of it.
+
+What this fork adds: the 1100D platform files and memory trimming, an
+enlarge-to-playback-size step for its smaller preview, a full-screen stock
+picker on the Trash button modelled on the original's picker screen, and
+8.3-safe stock file names.
+
+Magic Lantern belongs to its authors; this builds on
+[reticulatedpines/magiclantern_simplified](https://github.com/reticulatedpines/magiclantern_simplified).
+Both are GPL v2.
+
+<br>
+
 GPL v2. See [LICENSE](LICENSE). Distributed **without any warranty**,
 including the implied warranties of merchantability and fitness for a
 particular purpose (sections 11 and 12).
