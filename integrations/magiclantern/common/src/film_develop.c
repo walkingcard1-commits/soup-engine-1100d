@@ -277,6 +277,11 @@ static int film_load_stock(se_stock *s)
             line0 = i + 1;
         }
     }
+    {
+        extern const char *film_stock_current(void);
+        const char *cur = film_stock_current();
+        if (cur[0]) snprintf(name, sizeof(name), "%s", cur);
+    }
     if (film_cached_ok && name[0] && !strncmp(name, film_cached_name, 31)) {
         *s = film_cached;
         ok = 1;

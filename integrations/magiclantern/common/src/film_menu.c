@@ -225,6 +225,15 @@ const char *film_stock_label(int i)
     return (i >= 0 && i < film_count) ? film_names[i] : "";
 }
 int film_stock_selected(void) { return film_stock; }
+
+/* The stock to develop with, straight from memory. The develop task asks
+ * this first so a pick never depends on SE.CFG having been rewritten. */
+const char *film_stock_current(void)
+{
+    if (film_count <= 0 || film_stock < 0 || film_stock >= film_count)
+        return "";
+    return film_names[film_stock];
+}
 void film_stock_choose(int i)
 {
     if (i < 0 || i >= film_count) return;
