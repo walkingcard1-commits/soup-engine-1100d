@@ -216,6 +216,8 @@ This writes `AUTOEXEC.BIN`, `ML/modules/t3_105.sym` and `ML/FILM/`.
 
 Then put the card in. Press **Trash** to pick a film (see below), or use
 the **Film** page in Magic Lantern's menu (the `F` tab) as on the 50D.
+Magic Lantern's own menu opens from the **\*** (AE lock) button on the 1100D
+build; **Av** still works as well.
 
 <br>
 
@@ -274,7 +276,7 @@ the screen, the same one the 5D Classic has.
 | button | what it does |
 |:--|:--|
 | 🎛️ **Wheel** or **◀ ▶** | choose a film |
-| ✅ **`SET`** | pick that film, turn Film on and close |
+| ✅ **`SET`** | pick that film, turn Film on and close. The last entry, **OFF**, turns developing off |
 | 🗑️ **Trash** or **MENU** | close, changing nothing |
 
 Trash still deletes in playback; the picker only opens from the shooting

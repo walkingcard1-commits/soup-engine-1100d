@@ -6383,12 +6383,38 @@ int handle_ml_menu_erase(struct event *event)
         int gui_state = GUISTATE_IDLE;
         #endif
 
+#ifdef FEATURE_SOUP_PICKER
+        /* Trash belongs to the film picker now; here it only closes a menu */
+        if (gui_menu_shown() && !beta_should_warn())
+#else
         if (gui_state == GUISTATE_IDLE || (gui_menu_shown() && !beta_should_warn()))
+#endif
         {
             give_semaphore( gui_sem );
             return 0;
         }
     }
+
+#ifdef FEATURE_SOUP_PICKER
+    /* The star (AE lock) button opens and closes the Magic Lantern menu.
+     * Canon's Reduce button in playback shares it, so only act when idle
+     * or when the menu is up. */
+    {
+        static int soup_star_eat;
+        if (event->param == BGMT_UNPRESS_ZOOM_OUT && soup_star_eat)
+        {
+            soup_star_eat = 0;
+            return 0;
+        }
+        if (event->param == BGMT_PRESS_ZOOM_OUT &&
+            (gui_state == GUISTATE_IDLE || (gui_menu_shown() && !beta_should_warn())))
+        {
+            soup_star_eat = 1;
+            give_semaphore( gui_sem );
+            return 0;
+        }
+    }
+#endif
 
     if (event->param == MLEV_JOYSTICK_LONG && !gui_menu_shown())
     {

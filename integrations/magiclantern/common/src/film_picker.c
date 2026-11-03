@@ -32,6 +32,8 @@ extern int film_stock_total(void);
 extern const char *film_stock_label(int i);
 extern int film_stock_selected(void);
 extern void film_stock_choose(int i);
+extern void film_stock_off(void);
+extern int film_is_on(void);
 
 #define PICK_MAX    16
 #define PICK_DESC   48
@@ -52,6 +54,7 @@ static uint8_t *pick_fb;             /* 720x240, 4 bits a pixel */
 static char *pick_desc;              /* PICK_MAX * PICK_DESC */
 static se_ui pick_ui;
 static se_ui_stock pick_stock[PICK_MAX];
+static int pick_total;               /* real stocks; entry pick_total is OFF */
 
 int film_picker_open(void)
 {
@@ -104,10 +107,12 @@ static void pick_read_desc(const char *body, int n, char *dst)
 static int pick_load(void)
 {
     char *index, *body, path[64];
-    int n = film_stock_total(), got, i, line0, k = 0;
+    int total = film_stock_total(), got, i, line0, k = 0;
+    int n;
 
-    if (n <= 0) return 0;
-    if (n > PICK_MAX) n = PICK_MAX;
+    if (total <= 0) return 0;
+    if (total > PICK_MAX - 1) total = PICK_MAX - 1;   /* room for OFF */
+    n = total;
     pick_fb = malloc(SE_UI_FB_SIZE + PICK_MAX * PICK_DESC);
     if (!pick_fb) return 0;
     pick_desc = (char *)pick_fb + SE_UI_FB_SIZE;
@@ -147,9 +152,15 @@ static int pick_load(void)
         pick_stock[i].name = film_stock_label(i);
         pick_stock[i].desc = pick_desc + i * PICK_DESC;
     }
+    /* last entry: no developing at all */
+    pick_stock[n].name = "OFF";
+    snprintf(pick_desc + n * PICK_DESC, PICK_DESC, "NO DEVELOPING. FILES STAY AS SHOT");
+    pick_stock[n].desc = pick_desc + n * PICK_DESC;
+    pick_total = n;
+    n++;
     se_ui_init(&pick_ui);
     se_ui_set_stocks(&pick_ui, pick_stock, n);
-    pick_ui.stock = film_stock_selected();
+    pick_ui.stock = film_is_on() ? film_stock_selected() : pick_total;
     pick_ui.ready = 1;
     pick_ui.screen = SE_SCREEN_STOCK;
     return 1;
@@ -241,6 +252,8 @@ int film_picker_event(struct event *event, int menu_is_shown)
 
     if (!pick_want) {
         if (k == BGMT_TRASH && !menu_is_shown && pick_can_open()) {
+            if (pick_fb)    /* already built: point it at the current state */
+                pick_ui.stock = film_is_on() ? film_stock_selected() : pick_total;
             pick_want = 1;
             gui_open_menu();
             return 0;
@@ -254,7 +267,8 @@ int film_picker_event(struct event *event, int menu_is_shown)
     if (k == BGMT_WHEEL_RIGHT || k == BGMT_PRESS_RIGHT ||
         k == BGMT_WHEEL_DOWN || k == BGMT_PRESS_DOWN)   { pick_step(1); return 0; }
     if (k == BGMT_PRESS_SET) {
-        film_stock_choose(pick_ui.stock);
+        if (pick_ui.stock >= pick_total) film_stock_off();
+        else film_stock_choose(pick_ui.stock);
         pick_close();
         return 0;
     }

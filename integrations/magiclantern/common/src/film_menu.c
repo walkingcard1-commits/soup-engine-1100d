@@ -226,6 +226,15 @@ const char *film_stock_label(int i)
 }
 int film_stock_selected(void) { return film_stock; }
 
+/* The picker's OFF entry: stop developing, leave the chosen stock alone.
+ * film_stock_choose() turns Film back on. */
+void film_stock_off(void)
+{
+    film_on = 0;
+    film_saved_on = film_on;
+    film_write_cfg();
+}
+
 /* The stock to develop with, straight from memory. The develop task asks
  * this first so a pick never depends on SE.CFG having been rewritten. */
 const char *film_stock_current(void)
