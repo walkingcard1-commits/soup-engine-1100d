@@ -4736,6 +4736,19 @@ menu_redraw_do()
     if (gui_state == GUISTATE_MENUDISP)
         return;
 
+#ifdef FEATURE_SOUP_PICKER
+    {
+        extern int film_picker_open(void);
+        extern void film_picker_draw(void);
+        if (film_picker_open())
+        {
+            film_picker_draw();
+            menu_damage = 0;
+            return;
+        }
+    }
+#endif
+
     if (menu_help_active)
     {
         menu_help_redraw();
@@ -5152,6 +5165,13 @@ int handle_ml_menu_touch(struct event * event)
 int
 handle_ml_menu_keys(struct event * event) 
 {
+#ifdef FEATURE_SOUP_PICKER
+    {
+        extern int film_picker_event(struct event * event, int menu_is_shown);
+        if (film_picker_event(event, menu_shown) == 0)
+            return 0;
+    }
+#endif
     if (menu_shown || arrow_keys_shortcuts_active())
         handle_ml_menu_keyrepeat(event);
 
@@ -5700,6 +5720,13 @@ static void menu_close()
     if (!menu_shown)
         return;
     menu_shown = false;
+
+#ifdef FEATURE_SOUP_PICKER
+    {
+        extern void film_picker_reset(void);
+        film_picker_reset();
+    }
+#endif
 
     customize_mode = 0;
     update_disp_mode_bits_from_params();

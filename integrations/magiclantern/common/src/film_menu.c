@@ -217,6 +217,25 @@ static void film_write_cfg(void)
     FIO_CloseFile(f);
 }
 
+/* For the full-screen picker (film_picker.c). Choosing from it also turns
+ * Film on, since picking a film is asking for it. */
+int film_stock_total(void) { return film_count; }
+const char *film_stock_label(int i)
+{
+    return (i >= 0 && i < film_count) ? film_names[i] : "";
+}
+int film_stock_selected(void) { return film_stock; }
+void film_stock_choose(int i)
+{
+    if (i < 0 || i >= film_count) return;
+    film_stock = i;
+    film_on = 1;
+    film_saved = film_stock;
+    film_saved_on = film_on;
+    film_saved_del = film_delete;
+    film_write_cfg();
+}
+
 static struct menu_entry film_menu[];
 
 static MENU_UPDATE_FUNC(film_page_update)

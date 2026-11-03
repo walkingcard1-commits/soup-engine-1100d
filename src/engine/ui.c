@@ -742,6 +742,7 @@ static void draw_stock(const se_ui *u, se_ui_fb *fb)
      * part of what a stock IS -- so saying "GRAIN ON" here was reporting a
      * switch that is not wired to anything.
      */
+#ifndef SE_UI_STILLS
     {
         const char *val = g_src_name[se_ui_source(u)];
         int lw = se_ui_text_w("SOURCE: ", 2);
@@ -750,6 +751,7 @@ static void draw_stock(const se_ui *u, se_ui_fb *fb)
         se_ui_text(fb, x,      194, "SOURCE: ", SE_C_MID, 2, 1);
         se_ui_text(fb, x + lw, 194, val,        SE_C_INK, 2, 1);
     }
+#endif
 
     /*
      * What the body actually does, not what se_ui_key_press does. The
@@ -757,7 +759,13 @@ static void draw_stock(const se_ui *u, se_ui_fb *fb)
      * the payload calls se_next_stock and se_toggle_source directly -- so
      * this line names the camera's controls.
      */
+#ifdef SE_UI_STILLS
+    /* Magic Lantern bodies: one develop path, so no SOURCE. The wheel and
+     * the arrows both move through the list. */
+    footer(fb, "\x01\x02 CHOOSE    SET PICK    DEL CLOSE");
+#else
     footer(fb, "\x01\x02 SOURCE    SET CHOOSE    DEL CLOSE");
+#endif
 }
 
 static void draw_settings(const se_ui *u, se_ui_fb *fb)

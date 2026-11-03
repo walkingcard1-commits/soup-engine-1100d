@@ -134,3 +134,8 @@ cc -std=gnu99 -O2 -DSE_HOSTED -Itools/filmdev -I<dir holding soup_cam.h> \
    tools/filmdev/filmdevtest.c engine/{se,cr2,jpeg_dec,jpeg_enc,look,stock,wb,color,grade,lut,resize}.c -lm
 /tmp/fdt /tmp/card && python3 tools/filmdev/check.py /tmp/card 2256 1504
 ```
+
+The 1100D's Trash picker is `integrations/magiclantern/common/src/film_picker.c`
+(built only where `FEATURE_SOUP_PICKER` is set) drawing `engine/ui.c`
+compiled with `SE_UI_STILLS`. It hooks three Magic Lantern entry points in
+`menu.c`: `menu_redraw_do`, `handle_ml_menu_keys` and `menu_close`.

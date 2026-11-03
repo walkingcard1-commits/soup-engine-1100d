@@ -38,16 +38,19 @@
  */
 #define FEATURE_SOUP_FILM
 
+/* Trash opens the full-screen film picker (film_picker.c). */
+#define FEATURE_SOUP_PICKER
+
 /*
  * Making room for it.
  *
  * Magic Lantern is given 512 KB on this body, from 0xC80100 to 0xD00000,
  * and that has to hold its BSS as well as its code. Stock 1100D.105 ends
- * about 30 KB short of the top. The Film engine is about 70 KB, so this
+ * about 30 KB short of the top. The Film engine and its picker are about 80 KB, so this
  * build leaves out features that are about video or about extra overlays,
  * and keeps the stills tools: exposure, bracketing, intervalometer, bulb,
  * zebra, focus peaking, magic zoom, histogram, spotmeter, focus aids.
- * Roughly 47 KB comes back, which leaves about 10 KB spare.
+ * Roughly 60 KB comes back, which leaves about 10 KB spare.
  *
  * tools/build-ml.py refuses to produce an AUTOEXEC.BIN whose BSS runs past
  * the top, because that does not boot. If you want one of these back, take
@@ -72,6 +75,26 @@
 #undef FEATURE_IMAGE_EFFECTS
 #undef FEATURE_VIGNETTING_CORRECTION
 #undef FEATURE_LV_CRAZY_COLORS
+
+// more video, and LiveView zoom/focus-box settings that are video's
+#undef FEATURE_MOVIE_REC_KEY
+#undef FEATURE_SHUTTER_LOCK
+#undef FEATURE_WARNINGS_FOR_BAD_SETTINGS
+#undef FEATURE_AUDIO_METERS
+#undef FEATURE_ANALOG_GAIN
+#undef FEATURE_DIGITAL_GAIN
+#undef FEATURE_AGC_TOGGLE
+#undef FEATURE_WIND_FILTER
+#undef FEATURE_INPUT_SOURCE
+#undef FEATURE_MIC_POWER
+#undef FEATURE_HEADPHONE_MONITORING
+#undef FEATURE_HEADPHONE_OUTPUT_VOLUME
+#undef FEATURE_LV_ZOOM_SETTINGS
+#undef FEATURE_LV_ZOOM_SHARP_CONTRAST
+#undef FEATURE_LV_ZOOM_AUTO_EXPOSURE
+#undef FEATURE_LV_FOCUS_BOX_FAST
+#undef FEATURE_LV_FOCUS_BOX_SNAP
+#undef FEATURE_LV_FOCUS_BOX_AUTOHIDE
 
 // playback extras
 #undef FEATURE_PLAY_EXPOSURE_FUSION

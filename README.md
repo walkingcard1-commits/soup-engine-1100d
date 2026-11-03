@@ -200,16 +200,17 @@ python3 src/tools/build-ml.py --model 1100D --card /path/to/card
 
 This writes `AUTOEXEC.BIN`, `ML/modules/t3_105.sym` and `ML/FILM/`.
 
-> ⚠️ **This is a slimmed Magic Lantern.** The 1100D gives it only 512 KB,
-> and stock already uses most of it. To fit the Film engine, video
-> features (FPS override, bitrate, HDR video and so on), crop marks, ghost
-> image and a few playback extras are left out. The list is in
+> ⚠️ **This is a slimmed, stills-only Magic Lantern.** The 1100D gives it
+> only 512 KB, and stock already uses most of it. To fit the Film engine
+> and picker, the video features (FPS override, bitrate, HDR video, audio
+> controls, LiveView zoom settings and so on), crop marks, ghost image and
+> a few playback extras are left out. The list is in
 > [`features.h`](integrations/magiclantern/1100D.105/platform/1100D.105/features.h).
 > The build stops with an error if the result would not fit, because an
 > oversized image does not boot.
 
-Then put the card in, open the Magic Lantern menu and use the **Film**
-page (the `F` tab), exactly as on the 50D.
+Then put the card in. Press **Trash** to pick a film (see below), or use
+the **Film** page in Magic Lantern's menu (the `F` tab) as on the 50D.
 
 <br>
 
@@ -260,7 +261,23 @@ exactly as the camera shot it.
 
 <br>
 
-### EOS 50D and EOS 1100D
+### EOS 1100D: the picker
+
+Press the **Trash** button on the shooting screen and the picker fills
+the screen, the same one the 5D Classic has.
+
+| button | what it does |
+|:--|:--|
+| 🎛️ **Wheel** or **◀ ▶** | choose a film |
+| ✅ **`SET`** | pick that film, turn Film on and close |
+| 🗑️ **Trash** or **MENU** | close, changing nothing |
+
+Trash still deletes in playback; the picker only opens from the shooting
+screen. Your choice is saved to `ML/SE.CFG` like the Film page's.
+
+<br>
+
+### EOS 50D and EOS 1100D: the Film page
 
 On the **Film** page:
 
