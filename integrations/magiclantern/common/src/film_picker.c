@@ -8,7 +8,7 @@
  * It lives inside Magic Lantern's own menu mode rather than beside it.
  * Opening it opens the ML menu, which is what brings the screen up and
  * keeps Canon's UI out of the way; menu_redraw_do then draws this instead
- * of the menu pages, and handle_ml_menu_keys hands it the buttons. All
+ * of the menu pages, and handle_ml_menu_erase (the Trash handler) hands it the buttons. All
  * three are plain Magic Lantern entry points, the ones stock ML uses on
  * every button press. None of it touches Canon's GUI hook, which is the
  * thing the 50D could not survive (see PITFALLS.md).

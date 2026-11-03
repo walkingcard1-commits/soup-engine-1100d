@@ -5165,13 +5165,6 @@ int handle_ml_menu_touch(struct event * event)
 int
 handle_ml_menu_keys(struct event * event) 
 {
-#ifdef FEATURE_SOUP_PICKER
-    {
-        extern int film_picker_event(struct event * event, int menu_is_shown);
-        if (film_picker_event(event, menu_shown) == 0)
-            return 0;
-    }
-#endif
     if (menu_shown || arrow_keys_shortcuts_active())
         handle_ml_menu_keyrepeat(event);
 
@@ -6305,6 +6298,15 @@ static struct longpress qset_longpress = {
 // this should work on most cameras
 int handle_ml_menu_erase(struct event *event)
 {
+#ifdef FEATURE_SOUP_PICKER
+    /* Trash opens ML's own menu from here, so the picker has to get the
+     * event first. It also takes every button while it is up. */
+    {
+        extern int film_picker_event(struct event * event, int menu_is_shown);
+        if (film_picker_event(event, gui_menu_shown()) == 0)
+            return 0;
+    }
+#endif
 // SJE if we get here, ML GUI is almost working!
 //    DryosDebugMsg(0, 15, "in handle_ml_menu_erase");
     if (dofpreview)
