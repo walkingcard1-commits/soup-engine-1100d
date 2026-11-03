@@ -1,11 +1,11 @@
 acros.fs
 astia.fs
-bleachbypass.fs
-classicchrome.fs
-classicneg.fs
+bleach.fs
+clchrome.fs
+clneg.fs
 eterna.fs
 gold.fs
-nostalgicneg.fs
+nostneg.fs
 portra.fs
 provia.fs
 realaace.fs

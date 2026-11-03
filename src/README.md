@@ -139,3 +139,8 @@ The 1100D's Trash picker is `integrations/magiclantern/common/src/film_picker.c`
 (built only where `FEATURE_SOUP_PICKER` is set) drawing `engine/ui.c`
 compiled with `SE_UI_STILLS`. It hooks three Magic Lantern entry points in
 `menu.c`: `menu_redraw_do`, `handle_ml_menu_erase` (where Trash is caught) and `menu_close`.
+
+
+### Stock file names
+
+The camera's card access reads 8.3 names only, so a stock file in `ML/FILM` must have a base name of at most 8 characters (`clchrome.fs`, not `classicchrome.fs`). A longer one is listed in the menu but fails to load when developing.

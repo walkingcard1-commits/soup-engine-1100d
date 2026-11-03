@@ -13,6 +13,8 @@ int ml_started = 1;
 int film_is_on(void) { return 1; }
 int film_wants_delete(void) { return 0; }
 
+const char *film_stock_current(void) { return ""; }
+
 int main(int argc, char **argv)
 {
     int rc;
