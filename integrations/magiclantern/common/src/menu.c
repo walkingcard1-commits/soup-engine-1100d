@@ -6313,7 +6313,8 @@ int handle_ml_menu_erase(struct event *event)
         static int ring[3][4], nring;
         int o = (event->obj && ((uint32_t)event->obj & 3) == 0) ? *(int*)event->obj : -1;
         int cur[4] = { event->type, event->param, event->arg, o };
-        if (memcmp(cur, ring[0], sizeof(cur)))
+        /* skip ML's own internal events (negative codes, e.g. redraw) */
+        if (event->param >= 0 && memcmp(cur, ring[0], sizeof(cur)))
         {
             memcpy(ring[2], ring[1], sizeof(cur)); memcpy(ring[1], ring[0], sizeof(cur));
             memcpy(ring[0], cur, sizeof(cur));
