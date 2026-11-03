@@ -6307,6 +6307,24 @@ int handle_ml_menu_erase(struct event *event)
             return 0;
     }
 #endif
+#ifdef SOUP_KEYLOG
+    {
+        /* diagnostic: show the last three distinct events on screen */
+        static int ring[3][4], nring;
+        int o = (event->obj && ((uint32_t)event->obj & 3) == 0) ? *(int*)event->obj : -1;
+        int cur[4] = { event->type, event->param, event->arg, o };
+        if (memcmp(cur, ring[0], sizeof(cur)))
+        {
+            memcpy(ring[2], ring[1], sizeof(cur)); memcpy(ring[1], ring[0], sizeof(cur));
+            memcpy(ring[0], cur, sizeof(cur));
+            nring++;
+            NotifyBox(6000, "#%d t%d p%x a%x o%x\nt%d p%x a%x o%x\nt%d p%x a%x o%x", nring,
+                ring[0][0], ring[0][1], ring[0][2], ring[0][3],
+                ring[1][0], ring[1][1], ring[1][2], ring[1][3],
+                ring[2][0], ring[2][1], ring[2][2], ring[2][3]);
+        }
+    }
+#endif
 // SJE if we get here, ML GUI is almost working!
 //    DryosDebugMsg(0, 15, "in handle_ml_menu_erase");
     if (dofpreview)
