@@ -15,6 +15,7 @@
 #include "../engine/stock.h"
 #include "../engine/jpeg_dec.h"
 #include "../engine/look.h"
+#include "../engine/resize.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -2057,6 +2058,77 @@ static int test_jpeg_half(void)
     return ok;
 }
 
+/* ------------------------------------------------------------- resize */
+typedef struct { uint8_t *rows; int w, n, bad; } rs_sink;
+
+static int rs_emit(void *ctx, const uint8_t *row, int width)
+{
+    rs_sink *k = ctx;
+    if (width != k->w) { k->bad = 1; return -1; }
+    memcpy(k->rows + (size_t)k->n * (size_t)width * 3, row, (size_t)width * 3);
+    k->n++;
+    return 0;
+}
+
+/* Run sw x sh through the enlarger. Returns 0 and fills `out` (dw x dh). */
+static int rs_run(const uint8_t *src, int sw, int sh, int dw, int dh, uint8_t *out)
+{
+    static uint8_t arena_mem[1 << 16];
+    se_arena a;
+    se_resize *r;
+    rs_sink k;
+    int y;
+
+    se_arena_init(&a, arena_mem, sizeof arena_mem);
+    if (se_resize_begin(&r, sw, sh, dw, dh, &a) != SE_OK) return -1;
+    k.rows = out; k.w = dw; k.n = 0; k.bad = 0;
+    for (y = 0; y < sh; y++)
+        if (se_resize_row(r, src + (size_t)y * sw * 3, rs_emit, &k) != SE_OK) return -1;
+    if (se_resize_end(r) != SE_OK || k.bad || k.n != dh) return -1;
+    return 0;
+}
+
+static int test_resize(void)
+{
+    /* The 1100D's real case: 2136x1424 up to 2256x1504, scaled down 24x
+     * so the check is quick. The shape (a ratio just above 1) is what
+     * matters, so the same fractions are kept. */
+    enum { SW = 89, SH = 60, DW = 94, DH = 63 };
+    static uint8_t src[SW * SH * 3], out[DW * DH * 3];
+    static uint8_t flat[SW * SH * 3];
+    int x, y, c, ok = 1;
+
+    /* a flat field stays flat, exactly */
+    memset(flat, 137, sizeof flat);
+    if (rs_run(flat, SW, SH, DW, DH, out) != 0) return 0;
+    for (x = 0; x < DW * DH * 3; x++) if (out[x] != 137) ok = 0;
+
+    /* the four corners land on the source's own corners */
+    for (y = 0; y < SH; y++)
+        for (x = 0; x < SW; x++)
+            for (c = 0; c < 3; c++)
+                src[(y * SW + x) * 3 + c] = (uint8_t)((x * 255 / (SW - 1) + c * 7) & 255);
+    if (rs_run(src, SW, SH, DW, DH, out) != 0) return 0;
+    for (c = 0; c < 3; c++) {
+        if (out[c] != src[c]) ok = 0;
+        if (out[(DW - 1) * 3 + c] != src[(SW - 1) * 3 + c]) ok = 0;
+        if (out[((DH - 1) * DW) * 3 + c] != src[((SH - 1) * SW) * 3 + c]) ok = 0;
+        if (out[((DH - 1) * DW + DW - 1) * 3 + c] != src[((SH - 1) * SW + SW - 1) * 3 + c]) ok = 0;
+    }
+    /* a horizontal ramp stays a monotonic ramp, and every row alike */
+    for (y = 0; y < DH; y++) {
+        for (x = 1; x < DW; x++)
+            if (out[(y * DW + x) * 3] < out[(y * DW + x - 1) * 3]) ok = 0;
+        if (memcmp(out + y * DW * 3, out, (size_t)DW * 3) != 0) ok = 0;
+    }
+    /* exact size is a plain copy */
+    if (rs_run(src, SW, SH, SW, SH, out) != 0) return 0;
+    if (memcmp(out, src, sizeof src) != 0) ok = 0;
+    /* shrinking is refused rather than done badly */
+    if (rs_run(src, SW, SH, SW - 1, SH, out) == 0) ok = 0;
+    return ok;
+}
+
 static int run_selftest(void)
 {
     printf("engine selftest\n");
@@ -2072,6 +2144,7 @@ static int run_selftest(void)
     check(test_ui_coverage(),       "every menu screen draws inside the overlay buffer");
     check(test_stock_roundtrip(),   "a film stock round trips through its text format");
     check(test_curve_monotonic(),   "point curves stay monotonic and inside [0,1]");
+    check(test_resize(),            "the enlarger keeps flats flat, corners put and ramps monotonic");
     check(fuzz_parsers(),           "corrupt and truncated files are rejected, never crash");
     printf("%s (%d failure%s)\n", fail_count ? "FAILED" : "all passed",
            fail_count, fail_count == 1 ? "" : "s");

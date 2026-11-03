@@ -2,7 +2,7 @@
 
 # 🎞️ Soup Engine <sub><sup>beta</sup></sub>
 
-### Film looks, in the camera, on a Canon EOS 5D Classic or EOS 50D.
+### Film looks, in the camera, on a Canon EOS 5D Classic, EOS 50D or EOS 1100D.
 
 <br>
 
@@ -11,7 +11,7 @@
 <br>
 <br>
 
-`beta` &nbsp;·&nbsp; `GPL v2` &nbsp;·&nbsp; `13 film stocks` &nbsp;·&nbsp; `EOS 5D Classic` &nbsp;·&nbsp; `EOS 50D`
+`beta` &nbsp;·&nbsp; `GPL v2` &nbsp;·&nbsp; `13 film stocks` &nbsp;·&nbsp; `EOS 5D Classic` &nbsp;·&nbsp; `EOS 50D` &nbsp;·&nbsp; `EOS 1100D`
 
 </div>
 
@@ -22,8 +22,8 @@ what lands on the card, differs by camera — see **Using it** below for
 each.
 
 On the **5D Classic**, press the **trash button**, pick a film, shoot.
-On the **50D**, open the Magic Lantern **Film** page and turn **Film**
-on.
+On the **50D** and **1100D**, open the Magic Lantern **Film** page and
+turn **Film** on.
 
 ```
 # 5D Classic
@@ -33,6 +33,8 @@ IMG_1234.FLM.JPG    the same photo with the look on it
 # 50D
 IMG_1234.CR2        your raw file (preview updated when Delete CR2 is off)
 FLM_1234.JPG        the same photo with the look on it, 2352×1568
+
+# 1100D: same as the 50D, at 2256×1504
 ```
 
 <br>
@@ -46,7 +48,8 @@ All thirteen, one frame, straight off the card.
 <br>
 
 > ⚠️ **Beta.** Unofficial code on twenty year old cameras. It's easy to
-> remove. Supported firmware is **5D Classic 1.1.1** and **50D 1.0.9**;
+> remove. Supported firmware is **5D Classic 1.1.1**, **50D 1.0.9** and
+> **1100D 1.0.5** (the 1100D port has not yet been run on a body);
 > other bodies are out of scope.
 
 > ⚖️ **No warranty.** Like all GPL software this comes with none. You
@@ -66,8 +69,8 @@ All thirteen, one frame, straight off the card.
 ## 📦 Installing
 
 Pick your body. The steps are not interchangeable: the Classic boots
-`SE.BIN` through a patched Magic Lantern; the 50D boots a Magic Lantern
-rebuild with the Film page linked in.
+`SE.BIN` through a patched Magic Lantern; the 50D and 1100D boot a Magic
+Lantern rebuild with the Film page linked in.
 
 <br>
 
@@ -146,7 +149,7 @@ repo. Why the Classic patch path fails here is in
 [`src/ml/platforms/50D.109/PITFALLS.md`](src/ml/platforms/50D.109/PITFALLS.md).
 
 ```sh
-python3 src/tools/build-50d.py --card /path/to/card
+python3 src/tools/build-ml.py --model 50D --card /path/to/card
 ```
 
 That checks out Magic Lantern `ed3e7c0d` (the 2025-06-20 50D.109
@@ -166,6 +169,47 @@ over it, and writes three things to the card:
 Open the Magic Lantern menu. The **Film** page is the one with the `F`
 tab. Turn **Film** on. Leave **Delete CR2** off until you have seen a
 picture you like.
+
+<br>
+
+---
+
+<br>
+
+### EOS 1100D / Rebel T3 / Kiss X50 (firmware 1.0.5)
+
+Built the same way as the 50D, against the same pinned Magic Lantern.
+
+#### 1️⃣ &nbsp; Install Magic Lantern
+
+> ### 👉 [builds.magiclantern.fm/1100D.html](https://builds.magiclantern.fm/1100D.html)
+
+Follow their instructions, then check the camera starts and their menu
+opens (the exposure compensation **Av** button) before going further.
+
+#### 2️⃣ &nbsp; Back up their `autoexec.bin`
+
+Copy it off the card. Putting it back (with their `ML/modules/t3_105.sym`)
+is how you uninstall.
+
+#### 3️⃣ &nbsp; Build `AUTOEXEC.BIN` with the Film page
+
+```sh
+python3 src/tools/build-ml.py --model 1100D --card /path/to/card
+```
+
+This writes `AUTOEXEC.BIN`, `ML/modules/t3_105.sym` and `ML/FILM/`.
+
+> ⚠️ **This is a slimmed Magic Lantern.** The 1100D gives it only 512 KB,
+> and stock already uses most of it. To fit the Film engine, video
+> features (FPS override, bitrate, HDR video and so on), crop marks, ghost
+> image and a few playback extras are left out. The list is in
+> [`features.h`](integrations/magiclantern/1100D.105/platform/1100D.105/features.h).
+> The build stops with an error if the result would not fit, because an
+> oversized image does not boot.
+
+Then put the card in, open the Magic Lantern menu and use the **Film**
+page (the `F` tab), exactly as on the 50D.
 
 <br>
 
@@ -216,7 +260,7 @@ exactly as the camera shot it.
 
 <br>
 
-### EOS 50D
+### EOS 50D and EOS 1100D
 
 On the **Film** page:
 
@@ -302,10 +346,10 @@ normally without it.
 
 <br>
 
-### EOS 50D
+### EOS 50D and EOS 1100D
 
 Put Magic Lantern's original `autoexec.bin` back, and put a matching
-`ML/modules/50D_109.sym` beside it. The 50D does not boot `SE.BIN`;
+sym file beside it (`ML/modules/50D_109.sym` or `ML/modules/t3_105.sym`). The 50D does not boot `SE.BIN`;
 deleting that file does not uninstall the Film page.
 
 > 🆘 **If the camera ever misbehaves:** pull the battery, put the card
@@ -339,9 +383,9 @@ All of it is in [`src/`](src).
 On the **5D Classic**, `AUTOEXEC.BIN` is Magic Lantern's program with
 215 bytes changed, and `tools/patch-film.py` is what applies them.
 
-On the **50D**, `AUTOEXEC.BIN` is a rebuilt Magic Lantern with the Film
-page from [`integrations/magiclantern/50D.109/`](integrations/magiclantern/50D.109/),
-built by `tools/build-50d.py`.
+On the **50D** and **1100D**, `AUTOEXEC.BIN` is a rebuilt Magic Lantern
+with the Film page from [`integrations/magiclantern/`](integrations/magiclantern/)
+(`common/` plus one directory per body), built by `tools/build-ml.py`.
 
 GPL v2. See [LICENSE](LICENSE). Distributed **without any warranty**,
 including the implied warranties of merchantability and fitness for a

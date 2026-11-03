@@ -8,6 +8,11 @@
 #include "dryos.h"
 #include "menu.h"
 #include "fio-ml.h"
+#include "soup_cam.h"
+
+#ifndef SOUP_INDEX_BUF
+#define SOUP_INDEX_BUF 8192
+#endif
 
 #define FILM_MAX   16
 #define FILM_NAME  32
@@ -93,7 +98,7 @@ static void film_add_name(const char *name)
 
 static void film_read_index(void)
 {
-    static char text[8192];
+    static char text[SOUP_INDEX_BUF];
     static char body[1024];
     char path[64];
     int got, i, line0;

@@ -52,8 +52,8 @@ for the rest.
 to distribute, so it is not included here, and `make payload` stops
 with a note rather than guessing.
 
-The 50D does not use `make payload`. Build it with `tools/build-50d.py`,
-described under 50D.109 below.
+The 50D does not use `make payload`. Build it with `tools/build-ml.py --model 50D`
+(or `1100D`), described under 50D.109 below.
 
 `make simtest` is the one that matters. It runs the actual payload
 against a mock of Canon's API and compares what the simulated camera
@@ -91,13 +91,14 @@ page. It does not boot `SE.BIN`, and it does not survive the GUI hook
 and the reasons are in `ml/platforms/50D.109/PITFALLS.md`.
 
 ```sh
-python3 tools/build-50d.py
-python3 tools/build-50d.py --card /path/to/card
+python3 tools/build-ml.py --model 50D
+python3 tools/build-ml.py --model 1100D --card /path/to/card
 ```
 
 The script checks out Magic Lantern `ed3e7c0d`
 (`magiclantern.2025-06-20.50D.109`) under `vendor/magiclantern/`,
-copies `integrations/magiclantern/50D.109/` over that tree, and builds
+copies `integrations/magiclantern/common/` and then the body's own
+directory over that tree, and builds
 `platform/50D.109`. The platform Makefile compiles `engine/` into the
 same image. You need `arm-none-eabi-gcc` (`ARM_BINPATH`) and, on
 Windows, Git's `usr\bin` on `PATH` so the Magic Lantern makefiles can
@@ -113,3 +114,23 @@ Modules call addresses out of that sym file.
 ## Licence
 
 GPL v2. See [../LICENSE](../LICENSE).
+
+## 1100D.105 and the desktop develop test
+
+The 1100D uses the same overlay and build as the 50D. Differences live in
+`integrations/magiclantern/1100D.105/platform/1100D.105/`: `soup_cam.h`
+(playback size 2256x1504, CR2 size floor) and `features.h` (the features
+left out to fit Magic Lantern's 512 KB region). Its half-size preview is
+smaller than that playback size, so `engine/resize.c` enlarges it.
+
+`tools/filmdev/` runs the real `film_develop.c` on the desktop against a
+fake card, for either body. Put only `soup_cam.h` in the include dir (the
+platform's own `features.h` shadows glibc's):
+
+```sh
+python3 tools/filmdev/mkcard.py /tmp/card 4272 2848
+cc -std=gnu99 -O2 -DSE_HOSTED -Itools/filmdev -I<dir holding soup_cam.h> \
+   -I../integrations/magiclantern/common/src -Iengine -o /tmp/fdt \
+   tools/filmdev/filmdevtest.c engine/{se,cr2,jpeg_dec,jpeg_enc,look,stock,wb,color,grade,lut,resize}.c -lm
+/tmp/fdt /tmp/card && python3 tools/filmdev/check.py /tmp/card 2256 1504
+```

@@ -18,15 +18,22 @@
 #include "look.h"
 #include "jpeg_dec.h"
 #include "jpeg_enc.h"
+#include "resize.h"
+#include "soup_cam.h"
 
 #define FILM_HDR     (256 * 1024)
 #define FILM_SCRATCH (768 * 1024)
 #define FILM_JPEG    (2 * 1024 * 1024)
 #define FILM_SCALE   2
-/* The 50D only plays back its own Small JPEG size. */
-#define FILM_PLAY_W  2352
-#define FILM_PLAY_H  1568
-#define FILM_MIN_CR2 (6u * 1024 * 1024)
+/* Each body only plays back its own Small JPEG size. soup_cam.h, in the
+ * platform directory, names it: SOUP_PLAY_W x SOUP_PLAY_H. */
+#define FILM_PLAY_W  SOUP_PLAY_W
+#define FILM_PLAY_H  SOUP_PLAY_H
+/* Smaller than this is not a finished CR2 yet. soup_cam.h may set it. */
+#ifndef SOUP_MIN_CR2
+#define SOUP_MIN_CR2 (6u * 1024 * 1024)
+#endif
+#define FILM_MIN_CR2 SOUP_MIN_CR2
 #define FILM_LOOKBACK 20
 
 extern int ml_started;
@@ -183,27 +190,46 @@ static void film_embed_preview(const char *cr2, const uint8_t *jpg, int jlen,
     FIO_CloseFile(h);
 }
 
+typedef struct {
+    se_jpeg *enc;
+    se_look_run *run;
+    int ow;
+    int err;
+    se_resize *rs;      /* set when the picture is enlarged to the playback size */
+    int pw;             /* width of the rows the encoder takes */
+} film_ctx;
+
+static int film_enc_row(void *ctx, const uint8_t *row, int width)
+{
+    film_ctx *L = ctx;
+    if (width != L->pw) { L->err = 1; return -1; }
+    if (se_jpeg_write_rows(L->enc, row, 1) != SE_OK) { L->err = 1; return -1; }
+    return 0;
+}
+
+/* A finished row from the look. Straight to the encoder, or through the
+ * enlarger first when the half-size preview is smaller than the playback
+ * size. */
 static int film_emit(void *ctx, const uint8_t *row, int width)
 {
-    struct {
-        se_jpeg *enc;
-        se_look_run *run;
-        int ow;
-        int err;
-    } *L = ctx;
+    film_ctx *L = ctx;
     if (width != L->ow) { L->err = 1; return -1; }
+    if (L->rs) {
+        if (se_resize_row(L->rs, row, film_enc_row, L) != SE_OK) {
+            L->err = 1;
+            return -1;
+        }
+        return 0;
+    }
+    /* Not enlarging: the row is ow wide, and the encoder reads the first
+     * play_w columns of it (enc->stride is ow). */
     if (se_jpeg_write_rows(L->enc, row, 1) != SE_OK) { L->err = 1; return -1; }
     return 0;
 }
 
 static int film_rows(void *ctx, const uint8_t *rgb, int nrows, int width)
 {
-    struct {
-        se_jpeg *enc;
-        se_look_run *run;
-        int ow;
-        int err;
-    } *L = ctx;
+    film_ctx *L = ctx;
     if (width != L->ow) { L->err = 1; return -1; }
     if (se_look_rows(L->run, rgb, nrows, film_emit, L) != SE_OK) {
         L->err = 1;
@@ -300,12 +326,7 @@ static int film_develop(const char *cr2, const char *jpg, se_stock *stock)
     se_look_run *run;
     film_mem jpeg;
     FILE *out;
-    struct {
-        se_jpeg *enc;
-        se_look_run *run;
-        int ow;
-        int err;
-    } L;
+    film_ctx L;
     size_t lookneed, need;
     uint32_t poff = 0, plen = 0;
     int pw = 0, ph = 0, ow, oh, got, jcap;
@@ -325,7 +346,8 @@ static int film_develop(const char *cr2, const char *jpg, se_stock *stock)
     if (se_jpeg_dec_info(pv, (size_t)got - poff, &ji) != SE_OK) {
         fio_free(hdr); return -1;
     }
-    /* Half the coded preview: 4752x3168 becomes 2376x1584. */
+    /* Half the coded preview: 4752x3168 becomes 2376x1584 on the 50D,
+     * 4272x2848 becomes 2136x1424 on the 1100D. */
     se_jpeg_scaled_size(ji.width, ji.height, FILM_SCALE, &ow, &oh);
     se_look_from_stock(stock, FILM_SCALE, &lk);
     lookneed = se_look_fit(&lk, ow, SE_LOOK_BUDGET);
@@ -387,23 +409,38 @@ static int film_develop(const char *cr2, const char *jpg, se_stock *stock)
 
     memset(&ex, 0, sizeof ex);
     ex.make = info.make[0] ? info.make : "Canon";
-    ex.model = info.model[0] ? info.model : "Canon EOS 50D";
+    ex.model = info.model[0] ? info.model : SOUP_CAM_MODEL;
     ex.software = stock->name;
     ex.datetime = info.datetime;
     ex.exposure_time = info.exposure_time;
     ex.aperture = info.aperture;
     ex.iso = info.iso;
     {
-        uint8_t *strip = SE_NEW(&arena, uint8_t, (size_t)8 * ow * 3);
+        uint8_t *strip;
         uint8_t *trow, *tstrip, *tbuf;
         se_jpeg *th;
         film_mem tmem;
         int play_w = ow, play_h = oh, ty;
-        if (!strip) { rc = SE_E_NOMEM; goto done; }
         if (ow >= FILM_PLAY_W && oh >= FILM_PLAY_H) {
+            /* Larger than playback takes: crop to it. */
             play_w = FILM_PLAY_W;
             play_h = FILM_PLAY_H;
+        } else if (ow <= FILM_PLAY_W && oh <= FILM_PLAY_H) {
+            /* Smaller: enlarge to it. Never reached on a body whose half-size
+             * preview is already the playback size. */
+            play_w = FILM_PLAY_W;
+            play_h = FILM_PLAY_H;
+            if (ow < play_w || oh < play_h) {
+                rc = se_resize_begin(&L.rs, ow, oh, play_w, play_h, &arena);
+                if (rc != SE_OK) goto done;
+            }
         }
+        L.pw = play_w;
+        /* The encoder's strip is eight rows of its own width, which is the
+         * wider of the two when the picture is being enlarged. */
+        strip = SE_NEW(&arena, uint8_t,
+                       (size_t)8 * (ow > play_w ? ow : play_w) * 3);
+        if (!strip) { rc = SE_E_NOMEM; goto done; }
         tbuf = SE_NEW(&arena, uint8_t, 8192);
         trow = SE_NEW(&arena, uint8_t, 160 * 3);
         tstrip = SE_NEW(&arena, uint8_t, 8 * 160 * 3);
@@ -424,11 +461,12 @@ static int film_develop(const char *cr2, const char *jpg, se_stock *stock)
         }
         rc = se_jpeg_begin(enc, play_w, play_h, 88, strip, &ex, film_sink, &jpeg);
         if (rc != SE_OK) goto done;
-        enc->stride = ow;
+        if (!L.rs) enc->stride = ow;
     }
     L.enc = enc;
     rc = se_jpeg_decode_scaled(pv, plen, FILM_SCALE, &arena, film_rows, &L, &ji);
     if (rc == SE_OK && !L.err) rc = se_look_end(L.run, film_emit, &L);
+    if (rc == SE_OK && !L.err && L.rs) rc = se_resize_end(L.rs);
     if (rc == SE_OK && !L.err) rc = se_jpeg_end(enc);
     if (jpeg.err || jpeg.len <= 0) rc = SE_E_IO;
     out = 0;

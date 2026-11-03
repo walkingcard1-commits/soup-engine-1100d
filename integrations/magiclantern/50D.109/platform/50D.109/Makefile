@@ -27,7 +27,8 @@ ML_SRC_EXTRA_OBJS = $(BUILD_DIR)/misc.o $(BUILD_DIR)/afma.o \
     $(BUILD_DIR)/soup_jpeg_dec.o $(BUILD_DIR)/soup_jpeg_enc.o \
     $(BUILD_DIR)/soup_look.o $(BUILD_DIR)/soup_stock.o \
     $(BUILD_DIR)/soup_wb.o $(BUILD_DIR)/soup_color.o \
-    $(BUILD_DIR)/soup_grade.o $(BUILD_DIR)/soup_lut.o
+    $(BUILD_DIR)/soup_grade.o $(BUILD_DIR)/soup_lut.o \
+    $(BUILD_DIR)/soup_resize.o
 #	video_hacks.o
 #	reloc.o \
 #	af_patterns.o
