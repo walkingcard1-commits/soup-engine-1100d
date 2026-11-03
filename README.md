@@ -49,7 +49,7 @@ All thirteen, one frame, straight off the card.
 
 > ⚠️ **Beta.** Unofficial code on twenty year old cameras. It's easy to
 > remove. Supported firmware is **5D Classic 1.1.1**, **50D 1.0.9** and
-> **1100D 1.0.5** (the 1100D port has not yet been run on a body);
+> **1100D 1.0.5** (the 1100D port is tested on a real body: develop, the Trash picker and all 13 stocks);
 > other bodies are out of scope.
 
 > ⚖️ **No warranty.** Like all GPL software this comes with none. You
@@ -179,6 +179,11 @@ picture you like.
 ### EOS 1100D / Rebel T3 / Kiss X50 (firmware 1.0.5)
 
 Built the same way as the 50D, against the same pinned Magic Lantern.
+
+> **Prebuilt card:** download `soup-engine-1100d-card.zip` from the
+> [releases page](https://github.com/walkingcard1-commits/soup-engine-1100d/releases/latest)
+> and copy `AUTOEXEC.BIN` and the `ML` folder onto the card, after step 1
+> below. Or build it yourself in step 3.
 
 #### 1️⃣ &nbsp; Install Magic Lantern
 
