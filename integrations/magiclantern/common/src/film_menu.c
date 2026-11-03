@@ -103,9 +103,15 @@ static void film_add_name(const char *name)
 static void film_read_index(void)
 {
     static char text[SOUP_INDEX_BUF];
-    static char body[1024];
+    static char body_small[1024];
+    /* A stock's NAME line can sit past the first KB (soup800.fs opens with
+     * a long comment), so read generously when memory allows. */
+    char *body = fio_malloc(4096);
+    int bodyn = 4096;
     char path[64];
     int got, i, line0;
+
+    if (!body) { body = body_small; bodyn = sizeof(body_small); }
 
     film_count = 0;
     got = (int)read_file("ML/FILM/INDEX.TXT", text, sizeof(text) - 1);
@@ -113,6 +119,7 @@ static void film_read_index(void)
         got = (int)read_file("A:/ML/FILM/INDEX.TXT", text, sizeof(text) - 1);
     if (got <= 0) {
         film_add_name("Standard");
+        if (body != body_small) fio_free(body);
         return;
     }
     text[got] = 0;
@@ -126,10 +133,10 @@ static void film_read_index(void)
         line0 = i + 1;
         if (!line[0] || line[0] == '#') continue;
         snprintf(path, sizeof(path), "ML/FILM/%s", line);
-        nbody = (int)read_file(path, body, sizeof(body) - 1);
+        nbody = (int)read_file(path, body, bodyn - 1);
         if (nbody <= 0) {
             snprintf(path, sizeof(path), "A:/ML/FILM/%s", line);
-            nbody = (int)read_file(path, body, sizeof(body) - 1);
+            nbody = (int)read_file(path, body, bodyn - 1);
         }
         if (nbody > 0) {
             body[nbody] = 0;
@@ -141,6 +148,7 @@ static void film_read_index(void)
         }
         film_add_name(line);
     }
+    if (body != body_small) fio_free(body);
     if (film_count == 0)
         film_add_name("Standard");
 }
