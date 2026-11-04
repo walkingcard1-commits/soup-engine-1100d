@@ -6416,16 +6416,25 @@ int handle_ml_menu_erase(struct event *event)
 
 #ifdef FEATURE_SOUP_PICKER
     /* The star (AE lock) button opens and closes the Magic Lantern menu.
-     * Canon's Reduce button in playback shares it, so only act when idle
-     * or when the menu is up. */
+     * On the 1100D it arrives as a GMT_OLC_INFO_CHANGED (0x61) event with
+     * arg 0xc, and the object's first word is 0x30041 when pressed and
+     * 0x10041 when released (read off the camera with SOUP_KEYLOG). */
     {
         static int soup_star_eat;
-        if (event->param == BGMT_UNPRESS_ZOOM_OUT && soup_star_eat)
+        int star = 0;   /* 1 pressed, 2 released */
+        if (event->type == 0 && event->param == 0x61 && event->arg == 0xc &&
+            event->obj && ((uint32_t)event->obj & 3) == 0)
+        {
+            int o = *(int*)event->obj;
+            if (o == 0x30041) star = 1;
+            else if (o == 0x10041) star = 2;
+        }
+        if (star == 2 && soup_star_eat)
         {
             soup_star_eat = 0;
             return 0;
         }
-        if (event->param == BGMT_PRESS_ZOOM_OUT &&
+        if (star == 1 &&
             (gui_state == GUISTATE_IDLE || (gui_menu_shown() && !beta_should_warn())))
         {
             soup_star_eat = 1;
